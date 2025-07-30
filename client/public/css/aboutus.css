@@ -1,0 +1,29 @@
+body {
+  background-color: #f9f9f9;
+  color: #333;
+  line-height: 1.6;
+}
+
+.about-section {
+  padding: 60px 20px;
+  background-color: #fff;
+}
+.container {
+  max-width: 900px;
+  margin: auto;
+}
+.about-section h2 {
+  color: #f53325;
+  font-size: 32px;
+  margin-bottom: 20px;
+}
+.about-section h3 {
+  color: #333;
+  margin-top: 30px;
+}
+.about-section ul {
+  margin: 10px 0 20px 20px;
+}
+.about-section ul li {
+  margin-bottom: 8px;
+}

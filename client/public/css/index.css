@@ -1,0 +1,118 @@
+ .hero {
+      background-color: white;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      padding: 60px 30px;
+    }
+
+    .hero-text {
+      flex: 1;
+      min-width: 300px;
+      padding-right: 20px;
+    }
+
+    .hero-text h1 {
+      font-size: 36px;
+      margin-bottom: 20px;
+    }
+
+    .hero-text p {
+      font-size: 18px;
+      margin-bottom: 30px;
+      color: #666;
+    }
+
+    .btn-primary {
+      background-color: #f53325;
+      color: white;
+      padding: 12px 24px;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+    }
+
+    .hero-img {
+      flex: 1;
+      min-width: 280px;
+      max-width: 450px;
+      text-align: center;
+    }
+
+    .hero-img img {
+      max-width: 100%;
+      height: auto;
+      border-radius: 2rem;
+    }
+
+    .section {
+      padding: 60px 30px;
+      max-width: 1200px;
+      margin: auto;
+    }
+
+    .section h2 {
+      text-align: center;
+      font-size: 28px;
+      margin-bottom: 40px;
+    }
+
+    .features {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+    }
+
+    .feature-box {
+      background-color: white;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+
+    .how-list {
+      max-width: 700px;
+      margin: auto;
+      font-size: 18px;
+      line-height: 1.8;
+    }
+
+    .testimonial {
+      background-color: white;
+      padding: 20px;
+      margin-bottom: 20px;
+      border-left: 5px solid #f53325;
+    }
+
+    .cta {
+      background: linear-gradient(135deg, #f53325, #824141);
+      color: white;
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .cta a {
+      background-color: white;
+      color: #f53325;
+      padding: 12px 24px;
+      text-decoration: none;
+      font-weight: bold;
+      border-radius: 5px;
+      margin-top: 20px;
+      display: inline-block;
+    }
+
+
+    @media (max-width: 768px) {
+      .hero {
+        flex-direction: column;
+      }
+      .hero-text {
+        padding-right: 0;
+        text-align: center;
+      }
+      .hero-img{
+        margin-top: 1rem;
+      }
+    }
