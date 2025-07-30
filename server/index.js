@@ -360,5 +360,3 @@ mongoose.connect(process.env.MONGO_URL, {
 .catch((err) => {
   console.error("❌ Mongoose connection error:", err);
 });
-
-
