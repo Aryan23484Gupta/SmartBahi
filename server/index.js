@@ -96,7 +96,7 @@ app.post("/submit", upload.none(), async (req, res) => {
 })
 
 app.post("/sendotp", async (req, res) => {
-    const { email, otp } = req.body;
+    const { email, otp , username } = req.body;
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -105,12 +105,22 @@ app.post("/sendotp", async (req, res) => {
         }
     });
 
+
     const mailOptions = {
         from: `"SmartBahi" <${process.env.Email}>`,
         to: email,
-        subject: `Otp from SmartBahi`,
-        text: `Use OTP ${otp} to verify your identity on SmartBahi. Do not share this code with anyone. This OTP is valid for 5 minutes.`
+        subject: "Your SmartBahi OTP for Account Verification",
+        text: `Hello ${username},\n
+Your One-Time Password (OTP) for verifying your SmartBahi account is:\n
+🔐 OTP: ${otp}\n
+This OTP is valid for the next 5 minutes.\n
+Please do not share this code with anyone.\n
+If you didn’t request this, please ignore this message.\n
+You can continue here: \n https://smartbahi-5hco.onrender.com\n
+Thank you,\n
+SmartBahi Team`
     };
+
 
     transporter.sendMail(mailOptions, (error, info) => {
         if (error) {
@@ -131,28 +141,20 @@ app.get("/readsmartbahi23484", async (req, res) => {
 let userprofile = "Aryan Gupta";
 
 app.post("/auth", async (req, res) => {
-    const { email, password, otp, ogotp } = req.body;
+    const { email, password} = req.body;
     const userexist = await user.findOne({ email });
 
-    if (otp == undefined || otp == '')
-        res.send("Enter OTP");
+    if (userexist != null && userexist.password == password) {
+        req.session.user = email;
+        userprofile = userexist.name;
+        res.send("Login Successfully");
 
-    else if (otp != ogotp)
-        res.send("Entered Wrong otp");
-
+    }
+    else if (userexist != null && userexist.password != password) {
+        res.send("Entered wrong password")
+    }
     else {
-        if (userexist != null && userexist.password == password) {
-            req.session.user = email;
-            userprofile = userexist.name;
-            res.send("Login Successfully");
-
-        }
-        else if (userexist != null && userexist.password != password) {
-            res.send("Entered wrong password")
-        }
-        else {
-            res.send("User not found")
-        }
+        res.send("User not found")
     }
 })
 
@@ -219,7 +221,7 @@ app.post("/amountrecieve", async (req, res) => {
     const { amount, userprofile, customerindex } = req.body;
 
     const profile = await user.findOne({ name: userprofile });
-    
+
     const customer = profile.customers[customerindex];
 
     customer.amount += amount;
@@ -253,37 +255,22 @@ app.post("/amountsend", async (req, res) => {
 //Delete Customer
 
 app.delete("/delete-customer", async (req, res) => {
-  const { index, data } = req.body;
+    const { index, data } = req.body;
 
-  try {
-    const profile = await user.findOne({ name: data });
+    try {
+        const profile = await user.findOne({ name: data });
 
-    profile.customers.splice(index, 1);
-    await profile.save();
+        profile.customers.splice(index, 1);
+        await profile.save();
 
-    res.json({ message: "Customer deleted successfully" });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Server error" });
-  }
+        res.json({ message: "Customer deleted successfully" });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: "Server error" });
+    }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+//FEEDBACK
 app.post("/feedback", upload.none(), async (req, res) => {
     const { email, name, subject, message } = req.body;
 
@@ -316,48 +303,20 @@ app.post("/feedback", upload.none(), async (req, res) => {
 
 })
 
-
 //DATABASE CONNECTION
-
-// mongoose.connect(process.env.DBURL)
-//   .then(() => {
-//     console.log("✅ MongoDB Connected");
-
-//     // Start the server only after DB connection is successful
-//     app.listen(process.env.PORT,() => {
-//       console.log("🚀 Server is Live");
-//       console.log(`📡 Visit: http://localhost:${process.env.PORT}`);
-//     });
-//   })
-//   .catch((err) => {
-//     console.error("❌ MongoDB connection failed:", err);
-//   });
-
-// // mongoose.connect(process.env.DBURL)
-// //     .then(() => {
-// //         console.log("db is connected")
-// //         app.listen(process.env.PORT,'0.0.0.0', () => {
-// //             console.log("Server is Live");
-// //             console.log(`Follow the link http://localhost:${process.env.PORT}`);
-// //         });
-// //     })
-
-
-
-
 mongoose.connect(process.env.MONGO_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
 })
-.then(() => {
-  console.log("✅ Connected to MongoDB with Mongoose");
+    .then(() => {
+        console.log("✅ Connected to MongoDB with Mongoose");
 
-  // Start Express server only after DB connection
-  app.listen(process.env.PORT || 8080, '0.0.0.0', () => {
-    console.log("🚀 Server is Live");
-    console.log(`🌐 http://localhost:${process.env.PORT || 8080}`);
-  });
-})
-.catch((err) => {
-  console.error("❌ Mongoose connection error:", err);
-});
+        // Start Express server only after DB connection
+        app.listen(process.env.PORT || 8080, '0.0.0.0', () => {
+            console.log("🚀 Server is Live");
+            console.log(`🌐 http://localhost:${process.env.PORT || 8080}`);
+        });
+    })
+    .catch((err) => {
+        console.error("❌ Mongoose connection error:", err);
+    });

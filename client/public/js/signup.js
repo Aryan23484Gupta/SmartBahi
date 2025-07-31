@@ -59,20 +59,25 @@ otpfield.style.display = "none";
 
 const show = async () => {
   const email = document.querySelector("#email");
+  const fullname = document.querySelector("#name");
   if (email.value != '' && (email.value).includes('@gmail.com')) {
     otp = Math.floor(100000 + Math.random() * 900000);
-    
+
 
     const res = await fetch("sendotp", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ email: email.value, otp })
+      body: JSON.stringify({ email: email.value, otp, username: fullname.value })
     })
     const result = await res.text();
-    if(result == "OTP sent successfully!")
+    if (result == "OTP sent successfully!") {
       otpfield.style.display = "block";
+      setTimeout(() => {
+        otp = undefined;
+      }, 300000);
+    }
     alert(result);
   }
 }

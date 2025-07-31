@@ -1,7 +1,5 @@
 const togglePassword = document.getElementById('togglePassword');
 const password = document.getElementById('password');
-const otpfield = document.querySelector("#otp");
-let otp;
 
 togglePassword.addEventListener('click', () => {
     const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
@@ -26,7 +24,7 @@ form.addEventListener("submit", async (e) => {
             headers: {
                 "Content-Type": "application/json"
             },
-            body: JSON.stringify({ ...plainObject, otp })
+            body: JSON.stringify({ ...plainObject })
         })
 
         const result = await res.text();
@@ -35,7 +33,7 @@ form.addEventListener("submit", async (e) => {
         if(result=="Login Successfully")
         {
             form.reset();
-            otpfield.style.display = "none";
+            // otpfield.style.display = "none";
             window.location.href = "/dashboard";
         }
     }
@@ -45,27 +43,3 @@ form.addEventListener("submit", async (e) => {
     
 
 })
-
-
-otpfield.style.display = "none";
-
-const show = async () => {
-    const email = document.querySelector("#email");
-    if (email.value != '' && (email.value).includes('@gmail.com')) {
-        otp = Math.floor(100000 + Math.random() * 900000);
-
-        const res = await fetch("sendotp", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({ email: email.value, otp })
-        })
-        const result = await res.text();
-        if(result=="OTP sent successfully!")
-            otpfield.style.display = "block";
-        alert(result);
-    }
-}
-
-
