@@ -90,6 +90,7 @@ app.post("/submit", upload.none(), async (req, res) => {
         res.send("Registration Successfull");
     }
     catch (err) {
+        console.log(err)
         res.send("User already exist");
     }
 })
@@ -295,7 +296,7 @@ app.post("/feedback", upload.none(), async (req, res) => {
     });
 
     const mailOptions = {
-        from: email,
+        from: `"SmartBahi" <${email}>`,
         to: process.env.RECIEVE,
         subject: `Feedback from ${name}`,
         text: `You got a new message:\n\nName: ${name}\nEmail: ${email}\nSubject: ${subject}\nMessage: ${message}`
