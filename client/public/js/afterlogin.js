@@ -7,11 +7,13 @@ const tbody = document.getElementById("customerTableBody");
 const totalcustomer = document.querySelector("#totalcustomer");
 const totalamountgivetxt = document.querySelector("#totalamountgive");
 const totalamountgottxt = document.querySelector("#totalamountget");
+const linkedtransactiontable = document.querySelector(".linkedtransactions");
+const linkedtransactiontbody = document.querySelector("#anothertransaction");
 let btngave, input, btnsave, btngot, enteredAmount, btndelete, totalamountgot = 0, totalamountgive = 0;
 
 
 let customername = [];
-let data;
+let data,loginnumber;
 
 
 
@@ -231,7 +233,61 @@ const updatecustomerlist = async () => {
 
 
 
+const totallinked = async()=>{
+  const response = await fetch('/linkedcustomer', {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ phone: loginnumber })
+  });
 
+  const result = await response.json();
+  const customername = result.data;
+
+
+    if (customername == undefined || customername.length === 0) {
+      linkedtransactiontable.style.display = "none";
+    } 
+    
+    else {
+      
+      linkedtransactiontable.style.display = "block"
+    customername.forEach((element, index) => {
+      const row = document.createElement("tr");
+      row.innerHTML = `
+      <td>${element.addedBy}<br>+91 ${element.addednumber}</td>
+      <td>${element.date.split("-").reverse().map((part, i) => i === 2 ? part.slice(2) : part).join("-")}</td>
+      <td id="elementamount">₹${(Math.abs(element.amount)) || 0}</td>
+      <td class="paid">Paid</td>
+    `;
+
+  
+      linkedtransactiontbody.appendChild(row);
+      const paid = document.querySelectorAll(".paid");
+      
+      const amountcolor = document.querySelectorAll("#elementamount");
+      
+      if (element.amount == 0) {
+        paid[index].innerText = "Settled";
+        amountcolor[index].style.color = "#28a745"
+      }
+      else if (element.amount < 0) {
+        totalamountgot += element.amount;
+        paid[index].innerText = "Recieved";
+        paid[index].style.color = "#007bff";
+        amountcolor[index].style.color = "#007bff";
+      }
+      else {
+        totalamountgive += element.amount;
+        paid[index].innerText = "Sent";
+        paid[index].style.color = "red";
+        amountcolor[index].style.color = "red"
+      }
+    });
+  }
+
+}
 
 
 
@@ -240,10 +296,13 @@ const updatecustomerlist = async () => {
 document.addEventListener("DOMContentLoaded", async () => {
 
   const res = await fetch('/userprofile', { method: "POST" });
-  data = await res.text();
+  const obj = await res.json();
+  data = obj.userprofile;
+  loginnumber = obj.usernumber;
   userprofile.innerText = `Welcome ${data} 👋`;
   await updatecustomerlist();
   totalcustomerupdate();
+  totallinked();
 });
 
 

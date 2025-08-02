@@ -77,7 +77,7 @@ app.get("/checklogin", (req, res) => {
 
 
 
-
+let usernumber;
 
 
 
@@ -138,7 +138,7 @@ app.get("/readsmartbahi23484", async (req, res) => {
     res.send(alluser);
 })
 
-let userprofile = "Aryan Gupta";
+let userprofile = "User";
 
 app.post("/auth", async (req, res) => {
     const { email, password} = req.body;
@@ -147,6 +147,7 @@ app.post("/auth", async (req, res) => {
     if (userexist != null && userexist.password == password) {
         req.session.user = email;
         userprofile = userexist.name;
+        usernumber = userexist.phone;
         res.send("Login Successfully");
 
     }
@@ -160,7 +161,7 @@ app.post("/auth", async (req, res) => {
 
 app.post("/userprofile", (req, res) => {
     if (userprofile != "User")
-        res.send(userprofile);
+        res.send({userprofile,usernumber});
     else
         res.send(userprofile);
 })
@@ -270,6 +271,49 @@ app.delete("/delete-customer", async (req, res) => {
         res.status(500).json({ error: "Server error" });
     }
 });
+
+//LINKED CUSTOMER
+
+app.post('/linkedcustomer', async (req, res) => {
+  const { phone } = req.body; 
+
+  try {
+    const Users = await user.find({
+      customers: { $elemMatch: { customerPhone: phone } }
+    });
+
+    if (Users.length === 0) {
+      return res.status(200).json({ message: "No linked customer found." });
+    }
+
+    const linkedEntries = Users.flatMap(user => {
+      const customer = user.customers.find(c => c.customerPhone === phone);
+      return {
+        addedBy: user.name,
+        addednumber: user.phone,
+        amount: customer.amount,
+        date: customer.lastUpdated
+      };
+    });
+
+    return res.status(200).json({
+      message: "Linked customer found.",
+      data: linkedEntries
+    });
+  } catch (err) {
+    console.error("Error checking linked customer:", err);
+    return res.status(500).json({ message: "Server error." });
+  }
+});
+
+
+
+
+
+
+
+
+
 
 //FEEDBACK
 app.post("/feedback", upload.none(), async (req, res) => {
