@@ -3,9 +3,10 @@ const mongoose = require("mongoose");
 
 const customerSchema = new mongoose.Schema({
     customerName: {
-        type: String,
-        required: true,
-        unique: true
+        type: String
+    },
+    customerPhone:{
+        type : Number
     },
     amount: {
         type: Number,

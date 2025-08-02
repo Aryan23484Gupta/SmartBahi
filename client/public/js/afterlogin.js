@@ -187,8 +187,8 @@ const updatecustomerlist = async () => {
       const row = document.createElement("tr");
 
       row.innerHTML = `
-      <td>${element.customerName}</td>
-      <td>${element.lastUpdated}</td>
+      <td>${element.customerName}<br>+91 ${element.customerPhone}</td>
+      <td>${element.lastUpdated.split("-").reverse().map((part, i) => i === 2 ? part.slice(2) : part).join("-")}</td>
       <td id="elementamount">₹${(Math.abs(element.amount)) || 0}</td>
       <td class="paid">Paid</td>
       <td class="actions">
@@ -268,13 +268,14 @@ form.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const input = document.querySelector("#customerinput").value;
+  const customerphone = document.querySelector("#customerphoneinput").value;
 
   const result = await fetch("/add-customer", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ input, data })
+    body: JSON.stringify({ input,customerphone, data })
   });
 
   const responseText = await result.text();
@@ -287,12 +288,3 @@ form.addEventListener("submit", async (e) => {
   addcustomerbtn.style.display = "inline-block";
   form.style.display = "none";
 });
-
-
-
-
-
-
-
-
-

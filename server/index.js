@@ -168,20 +168,21 @@ app.post("/userprofile", (req, res) => {
 //Add Customer
 
 app.post("/add-customer", async (req, res) => {
-    const { input, data } = req.body;
-
+    const { input,customerphone, data } = req.body;
+    
     try {
         const profile = await user.findOne({ name: data });
 
-        const duplicate = profile.customers.find(c => c.customerName.toLowerCase() === input.toLowerCase());
+        const duplicate = profile.customers.find(c => c.customerPhone == customerphone);
 
         if (duplicate) {
-            return res.status(409).json("Customer name already exists");
+            return res.status(409).json("Customer number already exists");
         }
 
         profile.customers.push({
             customerName: input,
             amount: 0,
+            customerPhone : Number(customerphone),
             lastUpdated: new Date().toISOString().split("T")[0]
         });
 
