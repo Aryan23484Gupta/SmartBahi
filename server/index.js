@@ -7,6 +7,7 @@ const multer = require("multer");
 const nodemailer = require("nodemailer")
 const bodyParser = require('body-parser');
 const session = require("express-session");
+const MongoStore = require("connect-mongo");
 
 const upload = multer();
 
@@ -18,11 +19,49 @@ app.use(express.urlencoded({ extended: true }));
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
+
+
 app.use(session({
-    secret: process.env.SECRET,
+    secret: "smartbahi_secret",
     resave: false,
-    saveUninitialized: true
+    saveUninitialized: false,
+    store: MongoStore.create({
+        mongoUrl: process.env.MONGO_URL,
+        collectionName: "sessions",
+        ttl: 60 * 60 * 24, // 1 day
+    }),
+    cookie: {
+        maxAge: 1000 * 60 * 60 * 24, // 1 day
+    }
 }));
+
+// ✅ 2. Connect to MongoDB and clear sessions after session middleware is ready
+mongoose.connect(process.env.MONGO_URL, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(async () => {
+    console.log("✅ Connected to MongoDB");
+
+    // // ❗Clear sessions AFTER session middleware is active
+    // const sessionCollection = mongoose.connection.collection("sessions");
+    // await sessionCollection.deleteMany({});
+    // console.log("🧹 Cleared all sessions on server restart");
+
+    app.listen(process.env.PORT, () => {
+        console.log("🚀 Server is Live");
+    });
+}).catch(err => {
+    console.error("❌ MongoDB connection error:", err);
+});
+
+
+const checkAuth = (req, res, next) => {
+    if (req.session && req.session.user) {
+        next(); // User is logged in
+    } else {
+        res.redirect('/login'); // Redirect to login page
+    }
+}
 
 
 
@@ -50,19 +89,15 @@ app.get("/features", (req, res) => {
     res.sendFile(path.join(__dirname, "..", "/client/page", "features.html"));
 })
 
-app.get("/dashboard", (req, res) => {
-    if (req.session.user) {
-        res.sendFile(path.join(__dirname, "..", "client", "page", "afterlogin.html"));
-    } else {
-        res.redirect("/login")
-    }
+app.get("/dashboard", checkAuth, (req, res) => {
+    res.sendFile(path.join(__dirname, "..", "client", "page", "afterlogin.html"));
 });
+
 
 app.get("/logout", (req, res) => {
     req.session.destroy(err => {
-        if (err) {
-            return res.send("Error logging out");
-        }
+        if (err) return res.send("Error logging out");
+        res.clearCookie("connect.sid");
         res.redirect("/");
     });
 });
@@ -96,7 +131,7 @@ app.post("/submit", upload.none(), async (req, res) => {
 })
 
 app.post("/sendotp", async (req, res) => {
-    const { email, otp , username } = req.body;
+    const { email, otp, username } = req.body;
     const transporter = nodemailer.createTransport({
         service: 'gmail',
         auth: {
@@ -141,15 +176,18 @@ app.get("/readsmartbahi23484", async (req, res) => {
 let userprofile = "User";
 
 app.post("/auth", async (req, res) => {
-    const { email, password} = req.body;
+    const { email, password } = req.body;
     const userexist = await user.findOne({ email });
 
     if (userexist != null && userexist.password == password) {
-        req.session.user = email;
+        req.session.user = {
+            id: userexist._id,
+            name: userexist.name,
+            phone: userexist.phone,
+        };
         userprofile = userexist.name;
         usernumber = userexist.phone;
         res.send("Login Successfully");
-
     }
     else if (userexist != null && userexist.password != password) {
         res.send("Entered wrong password")
@@ -159,18 +197,24 @@ app.post("/auth", async (req, res) => {
     }
 })
 
-app.post("/userprofile", (req, res) => {
-    if (userprofile != "User")
-        res.send({userprofile,usernumber});
-    else
-        res.send(userprofile);
-})
+app.get("/userprofile", (req, res) => {
+    if (req.session.user) {
+        console.log(req.session.user.name);
+        res.send({
+            userprofile: req.session.user.name,
+            usernumber: req.session.user.phone
+        });
+    } else {
+        res.status(401).send("Not logged in");
+    }
+});
+
 
 //Add Customer
 
 app.post("/add-customer", async (req, res) => {
-    const { input,customerphone, data } = req.body;
-    
+    const { input, customerphone, data } = req.body;
+
     try {
         const profile = await user.findOne({ name: data });
 
@@ -183,7 +227,7 @@ app.post("/add-customer", async (req, res) => {
         profile.customers.push({
             customerName: input,
             amount: 0,
-            customerPhone : Number(customerphone),
+            customerPhone: Number(customerphone),
             lastUpdated: new Date().toISOString().split("T")[0]
         });
 
@@ -275,35 +319,35 @@ app.delete("/delete-customer", async (req, res) => {
 //LINKED CUSTOMER
 
 app.post('/linkedcustomer', async (req, res) => {
-  const { phone } = req.body; 
+    const { phone } = req.body;
 
-  try {
-    const Users = await user.find({
-      customers: { $elemMatch: { customerPhone: phone } }
-    });
+    try {
+        const Users = await user.find({
+            customers: { $elemMatch: { customerPhone: phone } }
+        });
 
-    if (Users.length === 0) {
-      return res.status(200).json({ message: "No linked customer found." });
+        if (Users.length === 0) {
+            return res.status(200).json({ message: "No linked customer found." });
+        }
+
+        const linkedEntries = Users.flatMap(user => {
+            const customer = user.customers.find(c => c.customerPhone === phone);
+            return {
+                addedBy: user.name,
+                addednumber: user.phone,
+                amount: customer.amount,
+                date: customer.lastUpdated
+            };
+        });
+
+        return res.status(200).json({
+            message: "Linked customer found.",
+            data: linkedEntries
+        });
+    } catch (err) {
+        console.error("Error checking linked customer:", err);
+        return res.status(500).json({ message: "Server error." });
     }
-
-    const linkedEntries = Users.flatMap(user => {
-      const customer = user.customers.find(c => c.customerPhone === phone);
-      return {
-        addedBy: user.name,
-        addednumber: user.phone,
-        amount: customer.amount,
-        date: customer.lastUpdated
-      };
-    });
-
-    return res.status(200).json({
-      message: "Linked customer found.",
-      data: linkedEntries
-    });
-  } catch (err) {
-    console.error("Error checking linked customer:", err);
-    return res.status(500).json({ message: "Server error." });
-  }
 });
 
 
@@ -348,20 +392,7 @@ app.post("/feedback", upload.none(), async (req, res) => {
 
 })
 
-//DATABASE CONNECTION
-mongoose.connect(process.env.MONGO_URL, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-    .then(() => {
-        console.log("✅ Connected to MongoDB with Mongoose");
 
-        // Start Express server only after DB connection
-        app.listen(process.env.PORT || 8080, '0.0.0.0', () => {
-            console.log("🚀 Server is Live");
-            console.log(`🌐 http://localhost:${process.env.PORT || 8080}`);
-        });
-    })
-    .catch((err) => {
-        console.error("❌ Mongoose connection error:", err);
-    });
+app.get("/ping", (req, res) => {
+  res.status(200).send("pong");
+});

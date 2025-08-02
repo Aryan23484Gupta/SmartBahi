@@ -295,7 +295,7 @@ const totallinked = async()=>{
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  const res = await fetch('/userprofile', { method: "POST" });
+  const res = await fetch('/userprofile', { method: "GET" , credentials: "include" });
   const obj = await res.json();
   data = obj.userprofile;
   loginnumber = obj.usernumber;

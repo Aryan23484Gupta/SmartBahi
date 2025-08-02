@@ -21,6 +21,7 @@ form.addEventListener("submit", async (e) => {
     try {
         const res = await fetch("auth", {
             method: "POST",
+            credentials: "include", 
             headers: {
                 "Content-Type": "application/json"
             },
