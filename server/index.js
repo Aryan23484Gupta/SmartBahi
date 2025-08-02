@@ -394,5 +394,6 @@ app.post("/feedback", upload.none(), async (req, res) => {
 
 
 app.get("/ping", (req, res) => {
+  res.set("Cache-Control", "no-store"); // Prevent caching
   res.status(200).send("pong");
 });
