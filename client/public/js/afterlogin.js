@@ -9,151 +9,161 @@ const totalamountgivetxt = document.querySelector("#totalamountgive");
 const totalamountgottxt = document.querySelector("#totalamountget");
 const linkedtransactiontable = document.querySelector(".linkedtransactions");
 const linkedtransactiontbody = document.querySelector("#anothertransaction");
-let btngave, input, btnsave, btngot, enteredAmount, btndelete, totalamountgot = 0, totalamountgive = 0;
+const closetransactiontablebtn = document.querySelector(".transaction-close-btn");
+const transactionhistorytable = document.querySelector(".transaction-table-box");
+const btngave = document.querySelector(".btn-debit");
+const btngot = document.querySelector(".btn-credit");
+const btndelete = document.querySelector(".btn-reset");
+const btnsave = document.querySelector(".btn-submit");
+const amountinput = document.querySelector("#amountinput");
+const descriptioninput = document.querySelector("#descriptioninput");
+const transactionform = document.querySelector(".transaction-form");
+
+let enteredAmount, totalamountgot = 0, totalamountgive = 0, totaltr, addtransactionbtn, transactionhistoryother;
 
 
 let customername = [];
-let data,loginnumber;
+let data, loginnumber;
+
+
+  descriptioninput.style.display = "none";
+
+//TRANSACTION HISTORY TABLE TOGGLE
+closetransactiontablebtn.addEventListener("click", () => {
+  transactionhistorytable.style.display = "none";
+  transactionform.reset();
+  amountinput.style.display = "none";
+  descriptioninput.style.display = "none";
+})
+
+//AMOUNT INPUT FORMARTTED
+amountinput.oninput = (e) => {
+  let value = e.target.value.replace(/,/g, "").replace(/[^\d.]/g, "");
+
+  if (value === "") {
+    e.target.value = "";
+    return;
+  }
+
+  const [integer, decimal] = value.split(".");
+  const intPart = parseInt(integer, 10);
+  if (isNaN(intPart)) {
+    e.target.value = "";
+    return;
+  }
+
+  let formatted = intPart.toLocaleString("en-IN");
+  if (decimal !== undefined) {
+    formatted += "." + decimal;
+  }
+
+  e.target.value = "₹" + formatted;
+};
 
 
 
-
+//FETCH AND UPDATE CUSTOMER LIST
 const totalcustomerupdate = () => {
+  addtransactionbtn = document.querySelectorAll(".addtransaction");
   totalcustomer.innerText = customername.length <= 9 ? `0${customername.length}` : customername.length;
 
-  btngave = document.querySelectorAll(".gave");
-  input = document.querySelectorAll("#amountinput");
-  btnsave = document.querySelectorAll(".save");
-  btngot = document.querySelectorAll(".got");
-  btndelete = document.querySelectorAll(".delete");
+  addtransactionbtn.forEach((element, index) => {
+    element.addEventListener("click", () => {
 
 
+      loadTransactions(data, index);
 
-  btngave.forEach((button, index) => {
-    button.onclick = () => {
-      input[index].style.display = "inline-block";
-      input[index].value = "";
-      input[index].placeholder = "You Gave";
-      btnsave[index].style.display = "inline-block";
-    };
-  });
 
-  btngot.forEach((button, index) => {
-    button.onclick = () => {
-      input[index].style.display = "inline-block";
-      input[index].value = "";
-      input[index].placeholder = "You Got";
-      btnsave[index].style.display = "inline-block";
-    };
-  });
+      transactionhistorytable.style.display = "block";
 
-  btnsave.forEach((button, index) => {
-    button.onclick = async () => {
-      input[index].style.display = "none";
-      btnsave[index].style.display = "none";
+      //ADD PAYMENTS LOGIC
+      transactionform.onsubmit = async (e) => {
+        e.preventDefault();
+        const raw = amountinput.value;
+        const cleaned = raw.replace(/₹|,/g, "");
+        const enteredAmount = parseFloat(cleaned);
+        const descriptiontext = descriptioninput.value;
+        if (isNaN(enteredAmount) || enteredAmount <= 0) {
+          alert("Please enter a valid amount.");
+          return;
+        }
 
-      const raw = input[index].value;
-      const cleaned = raw.replace(/₹|,/g, "");
-      const enteredAmount = parseFloat(cleaned);
-      input[index].value = "";
+        const type = amountinput.placeholder === "Amount (₹) You Recieve" ? "credit" : "debit";
+        try {
+          const res = await fetch("/transactionhistory", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              data,
+              index,
+              balance: enteredAmount,
+              type,
+              description: descriptiontext
+            }),
+          });
 
-      if (isNaN(enteredAmount) || enteredAmount <= 0) {
-        alert("Please enter a valid amount.");
-        return;
+
+          const result = await res.json();
+          alert(result.message || "Transaction successful");
+          transactionhistorytable.style.display = "none";
+          location.reload();
+          transactionform.reset();
+        } catch (error) {
+          console.error(error);
+          alert("Failed to update amount.");
+        }
+      };
+
+      //DELETE CUSTOMER LOGIC
+      btndelete.onclick = async () => {
+        const confirmed = confirm("Are you sure?");
+        if (!confirmed) return;
+
+
+        try {
+          const res = await fetch("/delete-customer", {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              index,
+              data
+            })
+          });
+
+          const result = await res.json();
+          console.log(result.message || "Successfully Deleted");
+          transactionhistorytable.style.display = "none";
+          location.reload();
+        } catch (error) {
+          console.error(error);
+          console.log("Failed to delete customer.");
+        }
       }
 
-      const url =
-        input[index].placeholder === "You Got"
-          ? "/amountrecieve"
-          : "/amountsend";
-
-      try {
-        const res = await fetch(url, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            userprofile: data,
-            customerindex: index,
-            amount: enteredAmount,
-          }),
-        });
-
-        const result = await res.json();
-        alert(result.message || "Transaction successful");
-
-        await updatecustomerlist();
-        totalcustomerupdate();
-      } catch (error) {
-        console.error(error);
-        alert("Failed to update amount.");
-      }
-    };
-  });
-
-
-
-  btndelete.forEach((element, index) => {
-    btndelete[index].addEventListener("click", async () => {
-
-      const confirmed = confirm("Are you sure?");
-      if (!confirmed) return;
-
-
-      try {
-        const res = await fetch("/delete-customer", {
-          method: "DELETE",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            index,
-            data
-          })
-        });
-
-        const result = await res.json();
-        console.log(result.message || "Successfully Deleted");
-
-        await updatecustomerlist();
-        totalcustomerupdate();
-      } catch (error) {
-        console.error(error);
-        console.log("Failed to delete customer.");
-      }
     })
   })
 
 
+  btngave.onclick = () => {
+    descriptioninput.style.display = "block";
+    amountinput.style.display = "block";
+    amountinput.value = "";
+    amountinput.placeholder = "Amount (₹) You Sent";
+  };
 
 
-  // Format currency input
-  input.forEach((element) => {
-    element.oninput = (e) => {
-      let value = e.target.value.replace(/,/g, "").replace(/[^\d.]/g, "");
+  btngot.onclick = () => {
+    descriptioninput.style.display = "block";
+    amountinput.style.display = "block";
+    amountinput.value = "";
+    amountinput.placeholder = "Amount (₹) You Recieve";
+  };
 
-      if (value === "") {
-        e.target.value = "";
-        return;
-      }
-
-      const [integer, decimal] = value.split(".");
-      const intPart = parseInt(integer, 10);
-      if (isNaN(intPart)) {
-        e.target.value = "";
-        return;
-      }
-
-      let formatted = intPart.toLocaleString("en-IN");
-      if (decimal !== undefined) {
-        formatted += "." + decimal;
-      }
-
-      e.target.value = "₹" + formatted;
-    };
-  });
-};
+}
 
 
 
@@ -193,21 +203,14 @@ const updatecustomerlist = async () => {
       <td>${element.lastUpdated.split("-").reverse().map((part, i) => i === 2 ? part.slice(2) : part).join("-")}</td>
       <td id="elementamount">₹${(Math.abs(element.amount)) || 0}</td>
       <td class="paid">Paid</td>
-      <td class="actions">
-        <button class="btn gave">Send</button>
-        <button class="btn got">Recieve</button>
-        <button class="btn delete">Delete</button>
-        <input type="text" id="amountinput">
-           <button class="btn save" type="submit">Save</button>
-      </td>
+      <td class="actions"><button class="addtransaction">Manage Customer</button></td>
     `;
 
-  
       tbody.appendChild(row);
       const paid = document.querySelectorAll(".paid");
-      
+
       const amountcolor = document.querySelectorAll("#elementamount");
-      
+
       if (element.amount == 0) {
         paid[index].innerText = "Settled";
         amountcolor[index].style.color = "#28a745"
@@ -233,7 +236,7 @@ const updatecustomerlist = async () => {
 
 
 
-const totallinked = async()=>{
+const totallinked = async () => {
   const response = await fetch('/linkedcustomer', {
     method: "POST",
     headers: {
@@ -245,14 +248,13 @@ const totallinked = async()=>{
   const result = await response.json();
   const customername = result.data;
 
+  if (customername == undefined || customername.length === 0) {
+    linkedtransactiontable.style.display = "none";
+  }
 
-    if (customername == undefined || customername.length === 0) {
-      linkedtransactiontable.style.display = "none";
-    } 
-    
-    else {
-      
-      linkedtransactiontable.style.display = "block"
+  else {
+
+    linkedtransactiontable.style.display = "block"
     customername.forEach((element, index) => {
       const row = document.createElement("tr");
       row.innerHTML = `
@@ -262,12 +264,12 @@ const totallinked = async()=>{
       <td class="paid">Paid</td>
     `;
 
-  
+
       linkedtransactiontbody.appendChild(row);
       const paid = document.querySelectorAll(".paid");
-      
+
       const amountcolor = document.querySelectorAll("#elementamount");
-      
+
       if (element.amount == 0) {
         paid[index].innerText = "Settled";
         amountcolor[index].style.color = "#28a745"
@@ -284,8 +286,18 @@ const totallinked = async()=>{
         paid[index].style.color = "red";
         amountcolor[index].style.color = "red"
       }
+
+
+      row.addEventListener("click", () => {
+        transactionhistorytable.style.display = "block";
+        const username = element.addedBy;
+        const customerIndex = element.customerIndex;
+        console.log(username, customerIndex)
+        loadTransactionsforlinkeduser(username, customerIndex);
+      });
     });
   }
+
 
 }
 
@@ -295,7 +307,7 @@ const totallinked = async()=>{
 
 document.addEventListener("DOMContentLoaded", async () => {
 
-  const res = await fetch('/userprofile', { method: "GET" , credentials: "include" });
+  const res = await fetch('/userprofile', { method: "GET", credentials: "include" });
   const obj = await res.json();
   data = obj.userprofile;
   loginnumber = obj.usernumber;
@@ -334,7 +346,7 @@ form.addEventListener("submit", async (e) => {
     headers: {
       "Content-Type": "application/json"
     },
-    body: JSON.stringify({ input,customerphone, data })
+    body: JSON.stringify({ input, customerphone, data })
   });
 
   const responseText = await result.text();
@@ -347,3 +359,116 @@ form.addEventListener("submit", async (e) => {
   addcustomerbtn.style.display = "inline-block";
   form.style.display = "none";
 });
+
+
+
+
+
+const loadTransactions = async (data, index) => {
+  transactionform.style.display = "block";
+  const res = await fetch("/gettransactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ data, index })
+  });
+
+  const resdata = await res.json();
+  if (!res.ok) {
+    alert(data.message);
+    return;
+  }
+
+  const tableBody = document.querySelector(".transaction-table tbody");
+  const tableFooter = document.querySelector(".transaction-table tfoot");
+  tableBody.innerHTML = "";
+
+  let runningBalance = 0;
+
+  resdata.transactions.forEach(tx => {
+    const row = document.createElement("tr");
+    const isCredit = tx.type === "credit";
+    const amountText = isCredit ? `+${tx.balance}` : `-${tx.balance}`;
+    runningBalance += isCredit ? tx.balance : -tx.balance;
+
+    row.className = isCredit ? "transaction-credit-row" : "transaction-debit-row";
+
+    row.innerHTML = `
+        <td>${tx.date.split("-").reverse().join("-")}</td>
+        <td>${tx.description || ""}</td>
+        <td>₹${amountText}</td>
+        <td class="transaction-${tx.type}">${tx.type.charAt(0).toUpperCase() + tx.type.slice(1)}</td>
+        <td class="transaction-balance">₹${runningBalance}</td>
+      `;
+
+    tableBody.appendChild(row);
+  });
+
+  let due = "You Recieve Extra";
+  if (resdata.finalBalance < 0)
+    due = "Due";
+  else if (resdata.finalBalance == 0)
+    due = "All Clear";
+
+  tableFooter.querySelector("td:last-child").innerText = `${due} ₹${Math.abs(resdata.finalBalance)}`;
+}
+
+
+
+
+//FOR LINKED USER 
+const loadTransactionsforlinkeduser = async(data,index)=>{
+
+  transactionform.style.display = "none";
+
+  const res = await fetch("/gettransactions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({ data, index })
+  });
+
+  const resdata = await res.json();
+  if (!res.ok) {
+    alert(data.message);
+    return;
+  }
+
+  console.log(resdata)
+
+  const tableBody = document.querySelector(".transaction-table tbody");
+  const tableFooter = document.querySelector(".transaction-table tfoot");
+  tableBody.innerHTML = "";
+
+  let runningBalance = 0;
+
+  resdata.transactions.forEach(tx => {
+    const row = document.createElement("tr");
+    const isCredit = tx.type === "credit";
+    const amountText = isCredit ? `-${tx.balance}` : `+${tx.balance}`;
+    runningBalance += isCredit ? tx.balance : -tx.balance;
+
+    row.className = isCredit ? "transaction-debit-row" : "transaction-credit-row";
+
+    row.innerHTML = `
+        <td>${tx.date.split("-").reverse().join("-")}</td>
+        <td>${tx.description || ""}</td>
+        <td>₹${amountText}</td>
+        <td class="transaction-${tx.type=="credit"?"debit":"credit"}">${tx.type=="credit"?"Sent":"Recieve"}</td>
+        <td class="transaction-balance">₹${tx.type=="credit"?"-"+Math.abs(runningBalance):Math.abs(runningBalance)}</td>
+      `;
+
+    tableBody.appendChild(row);
+  });
+
+  let due = "Due";
+  if (resdata.finalBalance > 0)
+    due = "You Sent Extra";
+  else if (resdata.finalBalance == 0)
+    due = "All Clear";
+
+  tableFooter.querySelector("td:last-child").innerText = `${due} ₹${Math.abs(resdata.finalBalance)}`;
+
+}

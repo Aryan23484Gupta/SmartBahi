@@ -1,6 +1,3 @@
-
-/* Main Layout */
-
 main {
   padding: 30px;
   background: #f9f9f9;
@@ -53,7 +50,7 @@ main {
   margin-bottom: 30px;
 }
 
-.btn,.cancelbtn{
+.btn,.cancelbtn,.addtransaction{
   padding: 10px 20px;
   border: none;
   border-radius: 8px;
@@ -79,11 +76,11 @@ form{
   display: none;
 }
 
-#amountinput,.btn.save{
+.btn.save,#amountinput{
   display: none;
 }
 
-.btn.gave, .btn.delete, .btn.save {
+.btn.gave, .btn.delete, .btn.save, .addtransaction{
   background: #e74c3c;
   color: white;
 }
@@ -121,7 +118,7 @@ form{
 }
 
 .linkedtransactions:hover{
-  cursor: not-allowed;
+  cursor: pointer;
 }
 
 table {
@@ -144,7 +141,9 @@ th, td {
   border-bottom: 1px solid #eee;
 }
 
-
+.addtransaction:hover{
+  cursor: pointer;
+}
 
 td.actions {
   display: flex;
@@ -178,7 +177,6 @@ td.actions {
 
 
 
-/* Responsive Table Wrapper */
 .table-container {
   width: 100%;
   overflow-x: auto;
@@ -187,12 +185,11 @@ td.actions {
   box-sizing: border-box;
 }
 
-/* Table Styling */
 .transactions table,
 .linkedtransactions table {
   width: 100%;
   border-collapse: collapse;
-  min-width: 600px; /* Ensures scrollability on small screens */
+  min-width: 600px; 
 }
 
 .transactions th,
@@ -224,6 +221,10 @@ td.actions {
   .transactions h2, .linkedtransactions h2 {
     text-align: center;
     font-size: 1.2rem;
+  }
+
+  button{
+    font-size: 14px;
   }
 
   .transactions th,
@@ -258,4 +259,184 @@ td.actions {
   text-align: center;
 }
 
+}
+
+
+/* TRANSACTION HISTORY TABLE CSS */
+
+.transaction-table-box {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: white;
+  width: 90%;
+  max-height: 95vh;
+  overflow-y: auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  display: none;
+}
+
+/* Table */
+.transaction-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.transaction-table th,
+.transaction-table td {
+  padding: 12px 15px;
+  text-align: left;
+  border-bottom: 1px solid #ddd;
+  font-size: 15px;
+}
+
+.transaction-table-heading {
+  background-color: #f53325;
+  color: white;
+  font-size: 20px;
+  text-align: center;
+  padding: 15px 0;
+}
+
+/* Row Colors */
+.transaction-credit-row {
+  background-color: #e7f8e9;
+}
+
+.transaction-debit-row {
+  background-color: #ffe5e5;
+}
+
+/* Type styles */
+.transaction-credit {
+  color: green;
+  font-weight: bold;
+}
+
+.transaction-debit {
+  color: red;
+  font-weight: bold;
+}
+
+.transaction-balance {
+  font-weight: bold;
+}
+
+
+#descriptioninput{
+  margin-bottom: 1rem;
+}
+/* Close Button */
+.transaction-close-btn {
+  margin-top: 10px;
+  background-color: #f53325;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  font-size: 15px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.transaction-close-btn:hover {
+  background-color: #d0251d;
+}
+
+/* Form Section */
+.transaction-form {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.transaction-form .form-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.transaction-form input {
+  padding: 10px 12px;
+  font-size: 15px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline-color: #f53325;
+}
+
+/* Buttons Group */
+.transaction-form .form-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: space-between;
+}
+
+.transaction-form .form-buttons button {
+  flex: 1 1 45%;
+  padding: 10px 15px;
+  font-size: 15px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  color: white;
+}
+
+/* Individual button styles */
+.btn-credit {
+  background-color: #28a745;
+}
+
+.btn-credit:hover {
+  background-color: #218838;
+}
+
+.btn-debit {
+  background-color: #dc3545;
+}
+
+.btn-debit:hover {
+  background-color: #c82333;
+}
+
+.btn-reset {
+  background-color: #6c757d;
+}
+
+.btn-reset:hover {
+  background-color: #5a6268;
+}
+
+.btn-submit {
+  background-color: #f53325;
+}
+
+.btn-submit:hover {
+  background-color: #d0251d;
+}
+
+/* Responsive adjustments */
+@media (max-width: 600px) {
+  .transaction-table-box {
+    width: 95%;
+  }
+
+  .transaction-form .form-buttons button {
+    flex: 1 1 100%;
+  }
+
+  .transaction-table th,
+  .transaction-table td {
+    font-size: 13px;
+    padding: 10px;
+  }
+
+  .transaction-table-heading {
+    font-size: 18px;
+  }
 }

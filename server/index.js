@@ -31,7 +31,7 @@ app.use(session({
         ttl: 60 * 60 * 24, // 1 day
     }),
     cookie: {
-        maxAge: 1000 * 60 * 60 * 24, // 1 day
+        maxAge: 1000 * 60 * 60 * 24 * 30,
     }
 }));
 
@@ -199,7 +199,6 @@ app.post("/auth", async (req, res) => {
 
 app.get("/userprofile", (req, res) => {
     if (req.session.user) {
-        console.log(req.session.user.name);
         res.send({
             userprofile: req.session.user.name,
             usernumber: req.session.user.phone
@@ -241,6 +240,57 @@ app.post("/add-customer", async (req, res) => {
 });
 
 
+//INSERT TRANSACTION HISTORY AND UPDATE AMOUNT
+
+app.post("/transactionhistory", async (req, res) => {
+  const { balance, type, description, data, index } = req.body;
+  try {
+    const profile = await user.findOne({ name: data });
+
+    const transaction = {
+      balance,
+      type,
+      description
+    };
+
+    profile.customers[index].transactions.push(transaction);
+
+    if (type === "credit") {
+      profile.customers[index].amount += balance;
+    } else if (type === "debit") {
+      profile.customers[index].amount -= balance;
+    }
+
+    profile.customers[index].lastUpdated = new Date().toISOString().split("T")[0];
+
+    await profile.save();
+
+    res.status(200).json({ message: "Transaction added successfully" });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Internal server error" });
+  }
+});
+
+//GETTING TRANSACTION HISTORY
+app.post("/gettransactions", async (req, res) => {
+  const { data, index } = req.body;
+
+  try {
+    const profile = await user.findOne({ name: data });
+
+    const transactions = profile.customers[index].transactions;
+    const finalBalance = profile.customers[index].amount;
+
+    res.status(200).json({ transactions, finalBalance });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
+
+
 
 //Fetch Customer 
 
@@ -260,43 +310,7 @@ app.post("/allcustomer", async (req, res) => {
 
 
 
-//Update Amount 
 
-app.post("/amountrecieve", async (req, res) => {
-
-    const { amount, userprofile, customerindex } = req.body;
-
-    const profile = await user.findOne({ name: userprofile });
-
-    const customer = profile.customers[customerindex];
-
-    customer.amount += amount;
-    customer.lastUpdated = new Date().toISOString().split("T")[0];
-
-    await profile.save();
-
-    res.status(200).json("Amount Updated Successfully");
-
-
-})
-
-app.post("/amountsend", async (req, res) => {
-
-    const { amount, userprofile, customerindex } = req.body;
-
-    const profile = await user.findOne({ name: userprofile });
-
-    const customer = profile.customers[customerindex];
-
-    customer.amount -= amount;
-    customer.lastUpdated = new Date().toISOString().split("T")[0];
-
-    await profile.save();
-
-    res.status(200).json("Amount Updated Successfully");
-
-
-})
 
 //Delete Customer
 
@@ -331,12 +345,16 @@ app.post('/linkedcustomer', async (req, res) => {
         }
 
         const linkedEntries = Users.flatMap(user => {
-            const customer = user.customers.find(c => c.customerPhone === phone);
+            const index = user.customers.findIndex(c => c.customerPhone === phone);
+            const customer = user.customers[index];
+
             return {
+                customernameog: customer.customerName,
                 addedBy: user.name,
                 addednumber: user.phone,
                 amount: customer.amount,
-                date: customer.lastUpdated
+                date: customer.lastUpdated,
+                customerIndex: index
             };
         });
 
@@ -394,6 +412,6 @@ app.post("/feedback", upload.none(), async (req, res) => {
 
 
 app.get("/ping", (req, res) => {
-  res.set("Cache-Control", "no-store"); // Prevent caching
-  res.status(200).send("pong");
+    res.set("Cache-Control", "no-store");
+    res.status(200).send("pong");
 });
